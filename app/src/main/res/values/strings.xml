@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">helloWorld</string>
+    <string name="edit_message">Hint text</string>
+    <string name="button_send">Send</string>
 </resources>
