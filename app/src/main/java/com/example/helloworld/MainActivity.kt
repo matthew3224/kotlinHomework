@@ -1,66 +1,62 @@
 package com.example.helloworld
 
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
+import com.example.helloworld.retrofit.ProductApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.Dispatcher
 import retrofit2.Call
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
-import retrofit2.http.Query
+import kotlin.coroutines.CoroutineContext
+
 
 class MainActivity : AppCompatActivity() {
     lateinit var str: EditText
     lateinit var res: TextView
+
     companion object {
         var staticfield: String = ""
     }
 
-    private val quizViewModel: QuizViewModel by lazy {
-        ViewModelProviders.of(this).get(QuizViewModel::class.java)
-    }
+    //    private val quizViewModel: QuizViewModel by viewModel()
     //ViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         str = findViewById(R.id.edit_message)
         res = findViewById(R.id.textField)
-        res.text = staticfield
+//        res.text = staticfield
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://dummyjson.com/")
+            .addConverterFactory(GsonConverterFactory.create()).build()
+
+        val productApi = retrofit.create(ProductApi::class.java)
+
         findViewById<Button>(R.id.send).setOnClickListener {
-            staticfield = str.text.toString()
-            res.text = staticfield
-            val questionTextResId = quizViewModel
+//            staticfield = str.text.toString()
+            CoroutineScope(Dispatchers.IO).launch {
+                val product = productApi.getProductById(str.text.toString().toInt())
+                runOnUiThread{
+                    res.text = product.title
+                }
+            }
+//            res.text = staticfield
         }
-        val provider: ViewModelProvider = ViewModelProviders.of(this)
-        val quizViewModel = provider.get(QuizViewModel::class.java)
-        Log.d(TAG, "Got a QuizViewModel: $quizViewModel")
+
+//        val provider: ViewModelProvider = ViewModelProviders.of(this)
+//        val quizViewModel = provider.get(QuizViewModel::class.java)
     }
 
-    interface UmoriliApi {
-        @GET("/api/get")
-        fun getData(
-            @Query("name") resourceName: String?,
-            @Query("num") count: Int
-        ): Call<List<PostModel?>?>?
-    }
 
-}
-
-private const val TAG = "QuizViewModel"
-class QuizViewModel : ViewModel() {
-    var currentIndex = 0
-    private val questionBank = R.id.textField
-    init {
-        Log.d(TAG, "ViewModel instance created")
-    }
-    override fun onCleared() {
-        super.onCleared()
-        Log.d(TAG, "ViewModel instance about to be destroyed")
-    }
 }
 
 class PostModel {
