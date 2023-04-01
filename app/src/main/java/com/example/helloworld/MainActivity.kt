@@ -4,8 +4,13 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.helloworld.retrofit.ProductApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,18 +27,12 @@ class MainActivity : AppCompatActivity() {
     lateinit var str: EditText
     lateinit var res: TextView
 
-    companion object {
-        var staticfield: String = ""
-    }
-
-    //    private val quizViewModel: QuizViewModel by viewModel()
-    //ViewModel
+    private lateinit var viewModel: MyViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         str = findViewById(R.id.edit_message)
         res = findViewById(R.id.textField)
-//        res.text = staticfield
 
         val retrofit = Retrofit.Builder()
             .baseUrl("https://dummyjson.com/")
@@ -41,24 +40,32 @@ class MainActivity : AppCompatActivity() {
 
         val productApi = retrofit.create(ProductApi::class.java)
 
+        viewModel = ViewModelProvider(this)[MyViewModel::class.java]
+        res.text = viewModel.getData()
+
         findViewById<Button>(R.id.send).setOnClickListener {
-//            staticfield = str.text.toString()
             CoroutineScope(Dispatchers.IO).launch {
                 val product = productApi.getProductById(str.text.toString().toInt())
-                runOnUiThread{
+                runOnUiThread {
                     res.text = product.title
+                    viewModel.setData(res.text.toString())
                 }
             }
-//            res.text = staticfield
         }
 
-//        val provider: ViewModelProvider = ViewModelProviders.of(this)
-//        val quizViewModel = provider.get(QuizViewModel::class.java)
     }
 
 
 }
 
-class PostModel {
+class MyViewModel : ViewModel() {
+    private var data: MutableLiveData<String> = MutableLiveData()
 
+    fun setData(data: String) {
+        this.data.value = data
+    }
+
+    fun getData(): String? {
+        return data.value
+    }
 }
